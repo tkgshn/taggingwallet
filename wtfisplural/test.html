@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Social Graph</title>
+    <style>
+        .agent {
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .agent.selected {
+            opacity: 0.5;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        #slider-container {
+            display: show;
+        }
+        .left {
+            float: left;
+        }
+        .right {
+            float: right;
+        }
+    </style>
+</head>
+<body>
+  
+  <div class="left argentinfo">
+  <a href="https://gyazo.com/b3fef1fafa7df38b41c22399b54fc71d"><img src="https://i.gyazo.com/b3fef1fafa7df38b41c22399b54fc71d.png" alt="Image from Gyazo" width="500"/></a>
+
+  <div id="agents">
+    <div class="agent" id="argent0" onclick="showSlider('argent0')">argent0</div>
+    <div class="agent" id="argent1" onclick="showSlider('argent1')">argent1</div>
+    <div class="agent" id="argent2" onclick="showSlider('argent2')">argent2</div>
+    <div class="agent" id="argent3" onclick="showSlider('argent3')">argent3</div>
+    <div class="agent" id="argent4" onclick="showSlider('argent4')">argent4</div>
+    <div class="agent" id="argent5" onclick="showSlider('argent5')">argent5</div>
+    <div class="agent" id="argent6" onclick="showSlider('argent6')">argent6</div>
+  </div>
+
+  <div id="slider-container">
+    <input type="range" min="0" max="100" value="0" id="donation-slider" oninput="updateDonationAndCalculate()">
+    <span id="slider-value">0</span>
+  </div>
+</div>
+
+<div class="right result">
+  <form action="#" id="matchingPoolForm">
+    Matching Pool(budget)<br>
+    <p><input type="number" name="quantity1" id="matchingPool" oninput="calculateMatchedAmounts()"></p>
+  </form>
+
+  <table id="amountsTable">
+    <thead>
+      <tr>
+        <th>Agent</th>
+        <th>Donation Amount</th>
+        <th>Matched Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</div>
+
+  <script>
+    let currentAgent = null;
+    let donations = {};
+    let initialized = false;
+
+    function initializeDonations() {
+      for (let i = 0; i <= 6; i++) {
+        donations[`argent${i}`] = 0;
+      }
+      initialized = true;
+    }
+
+
+    function showSlider(agentId) {
+        if (currentAgent) {
+            document.getElementById(currentAgent).classList.remove('selected');
+        }
+
+        currentAgent = agentId;
+        document.getElementById(agentId).classList.add('selected');
+
+        document.getElementById('slider-container').style.display = 'block';
+        currentAgent = agentId;
+
+        // Initialize donations if not already initialized
+        if (!initialized) {
+            initializeDonations();
+        }
+
+        const currentDonation = donations[agentId] || 0; // Use 0 if the donation amount is not set
+        document.getElementById('donation-slider').value = currentDonation;
+        document.getElementById('slider-value').textContent = currentDonation;
+    }
+
+
+    function updateDonationAndCalculate() {
+      const sliderValue = parseFloat(document.getElementById('donation-slider').value);
+      document.getElementById('slider-value').textContent = sliderValue;
+      donations[currentAgent] = sliderValue;
+      updateTable();
+      calculateMatchedAmounts();
+    }
+
+    function updateTable() {
+      const tbody = document.getElementById('amountsTable').getElementsByTagName('tbody')[0];
+      tbody.innerHTML = '';
+
+      for (const [agent, donation] of Object.entries(donations)) {
+        const row = tbody.insertRow();
+        row.insertCell(0).innerHTML = agent;
+        row.insertCell(1).innerHTML = donation;
+        row.insertCell(2).innerHTML = '';
+      }
+    }
+
+    // function calculateMatchedAmounts() {
+    //   const matchingPool = parseFloat(document.getElementById('matchingPool').value) || 0;
+    //   const contributions = Object.entries(donations).map(([node, amount]) => ({ node, amount }));
+    //   const clusters = [
+    //     { sets: ['L2'], nodes: ['argent0'] },
+    //     { sets: ['DeFi'], nodes: ['argent1', 'argent2'] },
+    //     { sets: ['NFT'], nodes: ['argent2', 'argent3', 'argent4', 'argent5'] },
+    //     { sets: ['Public Goods'], nodes: ['argent6'] }
+    //   ];
+    //   const matchedAmounts = calculateMatchingFunds(matchingPool, clusters, contributions);
+
+    //   const tbody = document.getElementById('amountsTable').getElementsByTagName('tbody')[0];
+    //   matchedAmounts.forEach(({ node, amount }, index) => {
+    //     tbody.rows[index].cells[2].innerHTML = amount.toFixed(2);
+    //   });
+    // }
+
+    function calculateMatchedAmounts() {
+      const matchingPool = parseFloat(document.getElementById('matchingPool').value) || 0;
+      const contributions = Object.entries(donations).map(([node, amount]) => ({ node, amount }));
+      const clusters = [
+        { sets: ['L2'], nodes: ['argent0'] },
+        { sets: ['DeFi'], nodes: ['argent1', 'argent2'] },
+        { sets: ['NFT'], nodes: ['argent2', 'argent3', 'argent4', 'argent5'] },
+        { sets: ['Public Goods'], nodes: ['argent6'] }
+      ];
+      let matchedAmounts = calculateMatchingFunds(matchingPool, clusters, contributions);
+
+      // Calculate the total Matched Amounts
+      let totalMatchedAmount = matchedAmounts.reduce((sum, {amount}) => sum + amount, 0);
+
+      // Normalize the Matched Amounts so they don't exceed the Matching Pool
+      matchedAmounts = matchedAmounts.map(({node, amount}) => ({
+        node,
+        amount: (amount / totalMatchedAmount) * matchingPool
+      }));
+
+      const tbody = document.getElementById('amountsTable').getElementsByTagName('tbody')[0];
+      matchedAmounts.forEach(({ node, amount }, index) => {
+        tbody.rows[index].cells[2].innerHTML = amount.toFixed(2);
+      });
+    }
+
+
+    function calculateMatchingFunds(totalAmount, clusters, contributions) {
+    const sqrt = Math.sqrt;
+    let sqrtSums = {};
+    clusters.forEach(cluster => {
+        const sets = cluster['sets'].sort().toString();
+        sqrtSums[sets] = sqrtSums[sets] || 0;
+        cluster['nodes'].forEach(node => {
+            const amount = contributions.find(con => con.node === node)?.amount || 0;
+            sqrtSums[sets] += sqrt(amount);
+        });
+    });
+
+    let votingPowers = {};
+    for (const [sets, sqrtSum] of Object.entries(sqrtSums)) {
+        votingPowers[sets] = (sqrtSum ** 2) / totalAmount;
+    }
+
+    let matchingFunds = [];
+    contributions.forEach(contribution => {
+        const node = contribution.node;
+        const amount = contribution.amount;
+        const cluster = clusters.find(cluster => cluster.nodes.includes(node));
+        const sets = cluster['sets'].sort().toString();
+        const matchedAmount = (sqrt(amount) / sqrtSums[sets]) * (votingPowers[sets] * totalAmount);
+        matchingFunds.push({ node, amount: matchedAmount });
+    });
+
+    // Check if the total matched amounts exceed the total pool
+    const totalMatched = matchingFunds.reduce((acc, val) => acc + val.amount, 0);
+    if (totalMatched > totalAmount) {
+        console.error("Total matched amounts exceed the total pool. Please check the logic.");
+    }
+
+    return matchingFunds;
+}
+
+
+
+  </script>
+</body>
+</html>
