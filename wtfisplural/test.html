@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <head>
     <title>Social Graph</title>
     <style>
@@ -30,28 +31,30 @@
 <body>
   
   <div class="left argentinfo">
-  <a href="https://gyazo.com/b3fef1fafa7df38b41c22399b54fc71d"><img src="https://i.gyazo.com/b3fef1fafa7df38b41c22399b54fc71d.png" alt="Image from Gyazo" width="500"/></a>
+    <a href="https://gyazo.com/b3fef1fafa7df38b41c22399b54fc71d"><img src="https://i.gyazo.com/b3fef1fafa7df38b41c22399b54fc71d.png" alt="Image from Gyazo" width="500"/></a>
 
-  <div id="agents">
-    <div class="agent" id="argent0" onclick="showSlider('argent0')">argent0</div>
-    <div class="agent" id="argent1" onclick="showSlider('argent1')">argent1</div>
-    <div class="agent" id="argent2" onclick="showSlider('argent2')">argent2</div>
-    <div class="agent" id="argent3" onclick="showSlider('argent3')">argent3</div>
-    <div class="agent" id="argent4" onclick="showSlider('argent4')">argent4</div>
-    <div class="agent" id="argent5" onclick="showSlider('argent5')">argent5</div>
-    <div class="agent" id="argent6" onclick="showSlider('argent6')">argent6</div>
-  </div>
+    <div id="agents">
+      <div class="agent" id="argent0" onclick="showSlider('argent0')">argent0</div>
+      <div class="agent" id="argent1" onclick="showSlider('argent1')">argent1</div>
+      <div class="agent" id="argent2" onclick="showSlider('argent2')">argent2</div>
+      <div class="agent" id="argent3" onclick="showSlider('argent3')">argent3</div>
+      <div class="agent" id="argent4" onclick="showSlider('argent4')">argent4</div>
+      <div class="agent" id="argent5" onclick="showSlider('argent5')">argent5</div>
+      <div class="agent" id="argent6" onclick="showSlider('argent6')">argent6</div>
+    </div>
 
-  <div id="slider-container">
-    <input type="range" min="0" max="100" value="0" id="donation-slider" oninput="updateDonationAndCalculate()">
-    <span id="slider-value">0</span>
-  </div>
+    <div id="slider-container">
+      <input type="range" min="0" max="100" value="0" id="slider" oninput="updateDonationAndCalculate()">
+      <span id="slidervalue">0</span>
+    </div>
+
+    <canvas id="myChart" width="200" height="200"></canvas>
 </div>
 
 <div class="right result">
   <form action="#" id="matchingPoolForm">
     Matching Pool(budget)<br>
-    <p><input type="number" name="quantity1" id="matchingPool" oninput="calculateMatchedAmounts()"></p>
+    <p><input type="number" name="quantity1" min="0" value="100" id="matchingPool" oninput="calculateMatchedAmounts()"></p>
   </form>
 
   <table id="amountsTable">
@@ -68,9 +71,23 @@
 </div>
 
   <script>
+    let xValue = 0;
     let currentAgent = null;
     let donations = {};
     let initialized = false;
+
+//     let contributions = [
+//   { node: "argent0", amount: 4 },
+//   { node: "argent1", amount: 4 },
+//   { node: "argent2", amount: 4 },
+//   { node: "argent3", amount: 4 },
+//   { node: "argent4", amount: 16 },
+//   { node: "argent5", amount: 16 },
+//   { node: "argent6", amount: 16 },
+// ];
+
+    //graph
+    const ctx = document.getElementById('myChart').getContext('2d');
 
     function initializeDonations() {
       for (let i = 0; i <= 6; i++) {
@@ -79,6 +96,68 @@
       initialized = true;
     }
 
+    //graph
+    const data = {
+        labels: Array.from({length: 101}, (_, i) => i),
+        datasets: [{
+            label: 'y = 2x + 10',
+            data: Array.from({length: 101}, (_, i) => 2 * i + 10),
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1,
+        }]
+    };
+
+    const verticalLinePlugin = {
+        id: 'verticalLinePlugin',
+        afterDraw: (chart) => {
+            if (xValue !== null) {
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+                const position = xScale.getPixelForValue(xValue);
+                const yPos = yScale.getPixelForValue(2 * xValue + 10);
+
+                // Draw vertical line
+                chart.ctx.beginPath();
+                chart.ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
+                chart.ctx.moveTo(position, yScale.bottom);
+                chart.ctx.lineTo(position, yScale.top);
+                chart.ctx.stroke();
+
+                // Draw cursor
+                chart.ctx.beginPath();
+                chart.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+                chart.ctx.arc(position, yPos, 5, 0, 2 * Math.PI);
+                chart.ctx.fill();
+            }
+        }
+    };
+
+    Chart.register(verticalLinePlugin);
+
+    const config = {
+        type: 'line',
+        data: data,
+        options: {
+            animation: {
+                duration: 0
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom'
+                }
+            }
+        },
+        plugins: [verticalLinePlugin]
+    };
+    
+    const myChart = new Chart(ctx, config);
+
+    slider.addEventListener('input', function() {
+        xValue = parseInt(this.value);
+        slidervalue.textContent = `${xValue}`;
+        myChart.update();
+    });
 
     function showSlider(agentId) {
         if (currentAgent) {
@@ -97,14 +176,14 @@
         }
 
         const currentDonation = donations[agentId] || 0; // Use 0 if the donation amount is not set
-        document.getElementById('donation-slider').value = currentDonation;
-        document.getElementById('slider-value').textContent = currentDonation;
+        document.getElementById('slider').value = currentDonation;
+        document.getElementById('slidervalue').textContent = currentDonation;
     }
 
 
     function updateDonationAndCalculate() {
-      const sliderValue = parseFloat(document.getElementById('donation-slider').value);
-      document.getElementById('slider-value').textContent = sliderValue;
+      const sliderValue = parseFloat(document.getElementById('slider').value);
+      document.getElementById('slidervalue').textContent = sliderValue;
       donations[currentAgent] = sliderValue;
       updateTable();
       calculateMatchedAmounts();
@@ -122,22 +201,7 @@
       }
     }
 
-    // function calculateMatchedAmounts() {
-    //   const matchingPool = parseFloat(document.getElementById('matchingPool').value) || 0;
-    //   const contributions = Object.entries(donations).map(([node, amount]) => ({ node, amount }));
-    //   const clusters = [
-    //     { sets: ['L2'], nodes: ['argent0'] },
-    //     { sets: ['DeFi'], nodes: ['argent1', 'argent2'] },
-    //     { sets: ['NFT'], nodes: ['argent2', 'argent3', 'argent4', 'argent5'] },
-    //     { sets: ['Public Goods'], nodes: ['argent6'] }
-    //   ];
-    //   const matchedAmounts = calculateMatchingFunds(matchingPool, clusters, contributions);
 
-    //   const tbody = document.getElementById('amountsTable').getElementsByTagName('tbody')[0];
-    //   matchedAmounts.forEach(({ node, amount }, index) => {
-    //     tbody.rows[index].cells[2].innerHTML = amount.toFixed(2);
-    //   });
-    // }
 
     function calculateMatchedAmounts() {
       const matchingPool = parseFloat(document.getElementById('matchingPool').value) || 0;
