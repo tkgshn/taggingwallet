@@ -31,7 +31,7 @@
 <body>
   
   <div class="left argentinfo">
-    <a href="https://gyazo.com/b3fef1fafa7df38b41c22399b54fc71d"><img src="https://i.gyazo.com/b3fef1fafa7df38b41c22399b54fc71d.png" alt="Image from Gyazo" width="500"/></a>
+    <img src="/argents.png" alt="Aargent's graph" width="500"/>
 
     <div id="agents">
       <div class="agent" id="argent0" onclick="showSlider('argent0')">argent0</div>
@@ -48,117 +48,266 @@
       <span id="slidervalue">0</span>
     </div>
 
-    <canvas id="myChart" width="200" height="200"></canvas>
-</div>
+    <!-- <canvas id="myLineChart" width="400" height="200"></canvas> -->
+    <!-- <canvas id="agent3LineChart" width="400" height="200"></canvas> -->
+    <canvas id="myLineChart" width="400" height="200"></canvas>
 
-<div class="right result">
-  <form action="#" id="matchingPoolForm">
-    Matching Pool(budget)<br>
-    <p><input type="number" name="quantity1" min="0" value="100" id="matchingPool" oninput="calculateMatchedAmounts()"></p>
-  </form>
 
-  <table id="amountsTable">
-    <thead>
-      <tr>
-        <th>Agent</th>
-        <th>Donation Amount</th>
-        <th>Matched Amount</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-</div>
+
+
+  </div>
+
+  <div class="right result">
+    <form action="#" id="matchingPoolForm">
+      Matching Pool(budget)<br>
+      <p><input type="number" name="quantity1" min="0" value="100" id="matchingPool" oninput="calculateMatchedAmounts()"></p>
+    </form>
+    
+    <table id="amountsTable">
+      <thead>
+        <tr>
+          <th>Agent</th>
+          <th>Donation Amount</th>
+          <th>Matched Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+
+      </tbody>
+    </table>
+  </div>
 
   <script>
-    let xValue = 0;
+    // let xValue = 0; #一旦グラフのことは考えないでおく
     let currentAgent = null;
     let donations = {};
+      // donationsの中には、各エージェントの寄付額の値が入る
+      // `donations[0]`は、中身がintでargent0の寄付額が入っている
     let initialized = false;
 
-//     let contributions = [
-//   { node: "argent0", amount: 4 },
-//   { node: "argent1", amount: 4 },
-//   { node: "argent2", amount: 4 },
-//   { node: "argent3", amount: 4 },
-//   { node: "argent4", amount: 16 },
-//   { node: "argent5", amount: 16 },
-//   { node: "argent6", amount: 16 },
-// ];
 
-    //graph
-    const ctx = document.getElementById('myChart').getContext('2d');
+    const clusters = [
+      { sets: ['L2'], nodes: ['argent0'] },
+      { sets: ['DeFi'], nodes: ['argent1', 'argent2'] },
+      { sets: ['NFT'], nodes: ['argent2', 'argent3', 'argent4', 'argent5'] },
+      { sets: ['Public Goods'], nodes: ['argent6'] }
+    ];
 
+
+let myLineChart;
+
+//added
+// let lineChartData = {
+//   labels: Array.from({length: 101}, (_, i) => i),  // 0 to 100
+//   datasets: [{
+//     label: 'Matched Amount',
+//     data: Array(101).fill(0),  // Initialize with zeros
+//     borderColor: 'rgba(75, 192, 192, 1)',
+//     borderWidth: 1,
+//     fill: false,
+//     pointBackgroundColor: Array(101).fill('rgba(75, 192, 192, 1)'),  // Initialize point colors
+//   }]
+// };
+
+
+
+// function drawLineChart() {
+//   const ctx = document.getElementById("myLineChart").getContext("2d");
+//   return new Chart(ctx, {
+//     type: 'line',
+//     data: lineChartData
+//   });
+// }
+
+
+function initLineChart() {
+  myLineChart = new Chart(document.getElementById("myLineChart").getContext("2d"), {
+    type: 'line',
+    data: {
+      labels: Array.from({length: 101}, (_, i) => i),  // 0 to 100
+      datasets: [{
+        label: 'Matched amount',
+        data: Array.from({length: 101}, () => 0),  // Initialize with zeros
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 1,
+        fill: false,
+        pointRadius: Array.from({length: 101}, () => 0)  // Initialize point radii with zeros
+      }]
+    },
+    options: {
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'X: Donation Amount (input by slider)'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Y: Matched Amount'
+          }
+        }
+      },
+      plugins: {
+      tooltip: {
+        callbacks: {
+          label: function(tooltipItem) {
+            const tableRow = document.getElementById('amountsTable').getElementsByTagName('tbody')[0].rows;
+            let matchedAmount = null;
+            for (let i = 0; i < tableRow.length; i++) {
+              if (tableRow[i].cells[0].innerHTML === currentAgent) {
+                matchedAmount = tableRow[i].cells[2].innerHTML;
+                break;
+              }
+            }
+            return `Matched Amount: ${matchedAmount}`;
+          }
+        }
+      }
+    }
+    }
+  });
+}
+
+
+// function updateLineChart() {
+//   const otherDonations = {...donations};
+//   delete otherDonations[currentAgent];
+//   const xData = [];
+
+//   for (let i = 0; i <= 100; i++) {
+//     otherDonations[currentAgent] = i;
+//     const contributions = Object.entries(otherDonations).map(([node, amount]) => ({ node, amount }));
+//     const matchedAmounts = calculateMatchingFunds(100, clusters, contributions);
+//     const currentMatchedAmount = matchedAmounts.find(m => m.node === currentAgent).amount || 0;
+//     xData.push(currentMatchedAmount);
+//   }
+
+//   // Update X-axis data
+//   myLineChart.data.datasets[0].data = xData;
+
+//   // Highlight the current donation amount on the graph
+//   myLineChart.data.datasets[0].pointRadius = Array.from({length: 101}, (_, i) => i === donations[currentAgent] ? 5 : 0);
+
+//   myLineChart.update();
+// }
+
+// function calculateYDataForLineChart(otherDonations, matchingPool, clusters) {
+//   const yData = [];
+//   for (let i = 0; i <= 100; i++) {
+//     otherDonations[currentAgent] = i;
+//     const contributions = Object.entries(otherDonations).map(([node, amount]) => ({ node, amount }));
+//     const matchedAmounts = calculateMatchingFunds(matchingPool, clusters, contributions);
+//     const currentMatchedAmount = matchedAmounts.find(m => m.node === currentAgent).amount || 0;
+//     yData.push(currentMatchedAmount);
+//   }
+//   return yData;
+// }
+
+
+// function updateLineChart() {
+//   const otherDonations = {...donations};
+//   delete otherDonations[currentAgent];
+//   const xData = [];
+
+//   for (let i = 0; i <= 100; i++) {
+//     otherDonations[currentAgent] = i;
+//     const contributions = Object.entries(otherDonations).map(([node, amount]) => ({ node, amount }));
+//     const matchedAmounts = calculateMatchingFunds(100, clusters, contributions);
+//     const currentMatchedAmount = matchedAmounts.find(m => m.node === currentAgent).amount || 0;
+//     xData.push(currentMatchedAmount);
+//   }
+
+//   // Update X-axis data
+//   myLineChart.data.datasets[0].data = xData;
+
+//   // Highlight the current donation amount on the graph
+//   const currentDonation = donations[currentAgent] || 0; // Use 0 if the donation amount is not set
+//   myLineChart.data.datasets[0].pointRadius = Array.from({length: 101}, (_, i) => i === currentDonation ? 5 : 0);
+
+//   myLineChart.update();
+// }
+
+// function updateLineChart() {
+//   const matchingPool = parseFloat(document.getElementById('matchingPool').value) || 0;  // Matching Poolを取得
+//   const otherDonations = {...donations};  // 現在の全エージェントの寄付額をコピー
+//   delete otherDonations[currentAgent];  // 操作中のエージェントの寄付額を削除
+//   const yData = [];
+
+//   // 寄付額が0から100に変わる場合のMatched Amountを計算
+//   for (let i = 0; i <= 100; i++) {
+//     otherDonations[currentAgent] = i;  // 操作中のエージェントの寄付額を設定
+//     const contributions = Object.entries(otherDonations).map(([node, amount]) => ({ node, amount }));
+//     const matchedAmounts = calculateMatchingFunds(matchingPool, clusters, contributions);
+//     const currentMatchedAmount = matchedAmounts.find(m => m.node === currentAgent).amount || 0;
+//     yData.push(currentMatchedAmount);
+//   }
+
+//   // Y軸データを更新
+//   myLineChart.data.datasets[0].data = yData;
+
+//   // 現在の寄付額にポイントを表示
+//   const currentDonation = donations[currentAgent] || 0;
+//   myLineChart.data.datasets[0].pointRadius = Array.from({length: 101}, (_, i) => i === currentDonation ? 5 : 0);
+
+//   myLineChart.update();  // グラフを更新
+// }
+
+function updateLineChart() {
+  const matchingPool = parseFloat(document.getElementById('matchingPool').value) || 0;  // Matching Poolを取得
+  const otherDonations = {...donations};  // 現在の全エージェントの寄付額をコピー
+  delete otherDonations[currentAgent];  // 操作中のエージェントの寄付額を削除
+  const yData = [];
+
+  for (let i = 0; i <= 100; i++) {
+    otherDonations[currentAgent] = i;
+    const contributions = Object.entries(otherDonations).map(([node, amount]) => ({ node, amount }));
+    let matchedAmounts = calculateMatchingFunds(matchingPool, clusters, contributions);
+
+    // Calculate the total Matched Amounts
+    let totalMatchedAmount = matchedAmounts.reduce((sum, {amount}) => sum + amount, 0);
+
+    // Normalize the Matched Amounts so they don't exceed the Matching Pool
+    matchedAmounts = matchedAmounts.map(({node, amount}) => ({
+      node,
+      amount: (amount / totalMatchedAmount) * matchingPool
+    }));
+
+    const currentMatchedAmount = matchedAmounts.find(m => m.node === currentAgent).amount || 0;
+    yData.push(currentMatchedAmount);
+  }
+
+    const currentDonation = donations[currentAgent] || 0;
+  myLineChart.data.datasets[0].pointRadius = Array.from({length: 101}, (_, i) => i === currentDonation ? 5 : 0);
+
+  // Update the chart data
+  myLineChart.data.datasets[0].data = yData;
+  myLineChart.update();
+}
+
+
+
+
+
+
+
+
+
+
+
+    // 一番最初に各エージェントの寄付額が0であることを確定する
     function initializeDonations() {
       for (let i = 0; i <= 6; i++) {
         donations[`argent${i}`] = 0;
       }
       initialized = true;
     }
-
-    //graph
-    const data = {
-        labels: Array.from({length: 101}, (_, i) => i),
-        datasets: [{
-            label: 'y = 2x + 10',
-            data: Array.from({length: 101}, (_, i) => 2 * i + 10),
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 1,
-        }]
-    };
-
-    const verticalLinePlugin = {
-        id: 'verticalLinePlugin',
-        afterDraw: (chart) => {
-            if (xValue !== null) {
-                const xScale = chart.scales.x;
-                const yScale = chart.scales.y;
-                const position = xScale.getPixelForValue(xValue);
-                const yPos = yScale.getPixelForValue(2 * xValue + 10);
-
-                // Draw vertical line
-                chart.ctx.beginPath();
-                chart.ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
-                chart.ctx.moveTo(position, yScale.bottom);
-                chart.ctx.lineTo(position, yScale.top);
-                chart.ctx.stroke();
-
-                // Draw cursor
-                chart.ctx.beginPath();
-                chart.ctx.fillStyle = 'rgba(0, 0, 0, 1)';
-                chart.ctx.arc(position, yPos, 5, 0, 2 * Math.PI);
-                chart.ctx.fill();
-            }
-        }
-    };
-
-    Chart.register(verticalLinePlugin);
-
-    const config = {
-        type: 'line',
-        data: data,
-        options: {
-            animation: {
-                duration: 0
-            },
-            scales: {
-                x: {
-                    type: 'linear',
-                    position: 'bottom'
-                }
-            }
-        },
-        plugins: [verticalLinePlugin]
-    };
     
-    const myChart = new Chart(ctx, config);
+    
 
-    slider.addEventListener('input', function() {
-        xValue = parseInt(this.value);
-        slidervalue.textContent = `${xValue}`;
-        myChart.update();
-    });
 
+    // 各エージェントのボタンをクリックするとこの関数が発火する、押されたエージェントによってargentIdの値が変わる。argent0なら`argent0`という値が伝えられる。
     function showSlider(agentId) {
         if (currentAgent) {
             document.getElementById(currentAgent).classList.remove('selected');
@@ -178,7 +327,12 @@
         const currentDonation = donations[agentId] || 0; // Use 0 if the donation amount is not set
         document.getElementById('slider').value = currentDonation;
         document.getElementById('slidervalue').textContent = currentDonation;
+
+        updateLineChart();
+
     }
+
+
 
 
     function updateDonationAndCalculate() {
@@ -187,6 +341,9 @@
       donations[currentAgent] = sliderValue;
       updateTable();
       calculateMatchedAmounts();
+      //graph
+      // updateLineChart();
+      updateLineChart();
     }
 
     function updateTable() {
@@ -206,12 +363,6 @@
     function calculateMatchedAmounts() {
       const matchingPool = parseFloat(document.getElementById('matchingPool').value) || 0;
       const contributions = Object.entries(donations).map(([node, amount]) => ({ node, amount }));
-      const clusters = [
-        { sets: ['L2'], nodes: ['argent0'] },
-        { sets: ['DeFi'], nodes: ['argent1', 'argent2'] },
-        { sets: ['NFT'], nodes: ['argent2', 'argent3', 'argent4', 'argent5'] },
-        { sets: ['Public Goods'], nodes: ['argent6'] }
-      ];
       let matchedAmounts = calculateMatchingFunds(matchingPool, clusters, contributions);
 
       // Calculate the total Matched Amounts
@@ -227,44 +378,48 @@
       matchedAmounts.forEach(({ node, amount }, index) => {
         tbody.rows[index].cells[2].innerHTML = amount.toFixed(2);
       });
+
+      updateLineChart();
     }
 
+  
 
     function calculateMatchingFunds(totalAmount, clusters, contributions) {
-    const sqrt = Math.sqrt;
-    let sqrtSums = {};
-    clusters.forEach(cluster => {
-        const sets = cluster['sets'].sort().toString();
-        sqrtSums[sets] = sqrtSums[sets] || 0;
-        cluster['nodes'].forEach(node => {
-            const amount = contributions.find(con => con.node === node)?.amount || 0;
-            sqrtSums[sets] += sqrt(amount);
-        });
-    });
+  const sqrt = Math.sqrt;
+  let sqrtSums = {};
+  clusters.forEach(cluster => {
+      const sets = cluster['sets'].sort().toString();
+      sqrtSums[sets] = sqrtSums[sets] || 0;
+      cluster['nodes'].forEach(node => {
+          const amount = contributions.find(con => con.node === node)?.amount || 0;  // 0をデフォルト値として設定
+          sqrtSums[sets] += sqrt(amount);
+      });
+  });
 
-    let votingPowers = {};
-    for (const [sets, sqrtSum] of Object.entries(sqrtSums)) {
-        votingPowers[sets] = (sqrtSum ** 2) / totalAmount;
-    }
 
     let matchingFunds = [];
-    contributions.forEach(contribution => {
-        const node = contribution.node;
-        const amount = contribution.amount;
-        const cluster = clusters.find(cluster => cluster.nodes.includes(node));
-        const sets = cluster['sets'].sort().toString();
-        const matchedAmount = (sqrt(amount) / sqrtSums[sets]) * (votingPowers[sets] * totalAmount);
-        matchingFunds.push({ node, amount: matchedAmount });
-    });
+  contributions.forEach(contribution => {
+      const node = contribution.node;
+      const amount = contribution.amount;
+      const cluster = clusters.find(cluster => cluster.nodes.includes(node));
+      const sets = cluster['sets'].sort().toString();
+      const matchedAmount = sqrtSums[sets] !== 0 ? (sqrt(amount) / sqrtSums[sets]) * (totalAmount) : 0;  // sqrtSumsが0でない場合だけ計算
+      matchingFunds.push({ node, amount: matchedAmount });
+  });
 
-    // Check if the total matched amounts exceed the total pool
-    const totalMatched = matchingFunds.reduce((acc, val) => acc + val.amount, 0);
-    if (totalMatched > totalAmount) {
-        console.error("Total matched amounts exceed the total pool. Please check the logic.");
-    }
+  // Check if the total matched amounts exceed the total pool
+  const totalMatched = matchingFunds.reduce((acc, val) => acc + val.amount, 0);
+  if (totalMatched > totalAmount) {
+      console.error("Total matched amounts exceed the total pool. Please check the logic.");
+  }
 
-    return matchingFunds;
+  return matchingFunds;
+
 }
+window.onload = function() {
+  initLineChart();
+  // Other initialization code
+};
 
 
 
