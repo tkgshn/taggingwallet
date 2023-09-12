@@ -1,84 +1,21 @@
-<!DOCTYPE html>
-<html>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<head>
-    <title>Social Graph</title>
-    <style>
-        .agent {
-            margin: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            cursor: pointer;
-            display: inline-block;
-        }
-        .agent.selected {
-            opacity: 0.5;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        #slider-container {
-            display: show;
-        }
-        .left {
-            float: left;
-        }
-        .right {
-            float: right;
-        }
-    </style>
-</head>
-<body>
-  
-  <div class="left argentinfo">
-    <img src="/argents.png" alt="Aargent's graph" width="500"/>
+ // Function to load a section
+ function loadSection(sectionName) {
+    fetch(`${sectionName}.html`)
+    .then(response => response.text())
+    .then(html => {
+        document.getElementById('main-content').innerHTML += html;
+    });
+}
 
-    <div id="agents">
-      <div class="agent" id="argent0" onclick="showSlider('argent0')">argent0</div>
-      <div class="agent" id="argent1" onclick="showSlider('argent1')">argent1</div>
-      <div class="agent" id="argent2" onclick="showSlider('argent2')">argent2</div>
-      <div class="agent" id="argent3" onclick="showSlider('argent3')">argent3</div>
-      <div class="agent" id="argent4" onclick="showSlider('argent4')">argent4</div>
-      <div class="agent" id="argent5" onclick="showSlider('argent5')">argent5</div>
-      <div class="agent" id="argent6" onclick="showSlider('argent6')">argent6</div>
-    </div>
+// Load all sections
+loadSection('hero');
+loadSection('simulator');
+loadSection('documentation');
 
-    <div id="slider-container">
-      <input type="range" min="0" max="100" value="0" id="slider" oninput="updateDonationAndCalculate()">
-      <span id="slidervalue">0</span>
-    </div>
-
-    <!-- <canvas id="myLineChart" width="400" height="200"></canvas> -->
-    <!-- <canvas id="agent3LineChart" width="400" height="200"></canvas> -->
-    <canvas id="myLineChart" width="400" height="200"></canvas>
+// {/* <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> */}
 
 
-
-
-  </div>
-
-  <div class="right result">
-    <form action="#" id="matchingPoolForm">
-      Matching Pool(budget)<br>
-      <p><input type="number" name="quantity1" min="0" value="100" id="matchingPool" oninput="calculateMatchedAmounts()"></p>
-    </form>
-    
-    <table id="amountsTable">
-      <thead>
-        <tr>
-          <th>Agent</th>
-          <th>Donation Amount</th>
-          <th>Matched Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-
-      </tbody>
-    </table>
-  </div>
-
-  <script>
-    // let xValue = 0; #一旦グラフのことは考えないでおく
+// let xValue = 0; #一旦グラフのことは考えないでおく
     let currentAgent = null;
     let donations = {};
       // donationsの中には、各エージェントの寄付額の値が入る
@@ -284,6 +221,8 @@ function updateLineChart() {
   // Update the chart data
   myLineChart.data.datasets[0].data = yData;
   myLineChart.update();
+  
+  showAgentInfo(currentAgent);
 }
 
 
@@ -305,6 +244,42 @@ function updateLineChart() {
     }
     
     
+    //追加
+    function calculateMembershipsAndFriendship(agentId) {
+  let memberships = 0;
+  let friendshipCount = 0;
+
+  // memberships（クラスターメンバーシップ数）を計算
+  clusters.forEach(cluster => {
+    if (cluster.nodes.includes(agentId)) {
+      memberships++;
+    }
+  });
+
+  // friendshipCount（友達数）を計算
+  clusters.forEach(cluster => {
+    if (cluster.nodes.includes(agentId)) {
+      friendshipCount += cluster.nodes.length - 1; // 自分自身を除く
+    }
+  });
+
+  return { memberships, friendshipCount };
+}
+
+function showAgentInfo(agentId) {
+  const { memberships, friendshipCount } = calculateMembershipsAndFriendship(agentId);
+
+  const currentDonation = donations[agentId] || 0;
+  // const currentMatchedAmount = // 現在のMatched Amountを取得するロジック
+
+  const influenceScore = Math.sqrt(currentDonation) * friendshipCount;
+
+  document.getElementById('membershipCount').innerText = `Number of cluster: ${memberships}`;
+  document.getElementById('friendshipCount').innerText = `Friendship Count: ${friendshipCount}`;
+  // document.getElementById('currentMatchedAmount').innerText = `Matched Amount: ${currentMatchedAmount}`;
+  document.getElementById('currentDonation').innerText = `Donation Amount: ${currentDonation}`;
+  document.getElementById('influenceScore').innerText = `Influence Score: ${influenceScore.toFixed(2)}`;
+}
 
 
     // 各エージェントのボタンをクリックするとこの関数が発火する、押されたエージェントによってargentIdの値が変わる。argent0なら`argent0`という値が伝えられる。
@@ -330,6 +305,9 @@ function updateLineChart() {
 
         updateLineChart();
 
+        //added
+        // showAgentInfo(agentId);
+
     }
 
 
@@ -344,6 +322,7 @@ function updateLineChart() {
       //graph
       // updateLineChart();
       updateLineChart();
+      showAgentInfo(agentId);
     }
 
     function updateTable() {
@@ -380,6 +359,21 @@ function updateLineChart() {
       });
 
       updateLineChart();
+      // showAgentInfo(agentId);
+
+      //added 
+      const matchedAmountsObj = {};
+
+  matchedAmounts.forEach(({ node, amount }, index) => {
+    tbody.rows[index].cells[2].innerHTML = amount.toFixed(2);
+    matchedAmountsObj[node] = amount;
+  });
+
+  updateLineChart();
+  // showAgentInfo(agentId);
+  
+  return matchedAmountsObj;
+
     }
 
   
@@ -422,7 +416,3 @@ window.onload = function() {
 };
 
 
-
-  </script>
-</body>
-</html>

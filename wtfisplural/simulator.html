@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Social Graph</title>
+    <link rel="stylesheet" type="text/css" href="css/styles.css">
+</head>
+<body>
+    <section id="simulator">
+    
+        <!-- <p>## simulator from here</p> -->
+
+        <img src="https://i.gyazo.com/b3fef1fafa7df38b41c22399b54fc71d.png" alt="Image from Gyazo" width="700"/>
+
+        <div id="agents">
+            <div class="agent" id="argent0" onclick="showSlider('argent0')">argent0</div>
+            <div class="agent" id="argent1" onclick="showSlider('argent1')">argent1</div>
+            <div class="agent" id="argent2" onclick="showSlider('argent2')">argent2</div>
+            <div class="agent" id="argent3" onclick="showSlider('argent3')">argent3</div>
+            <div class="agent" id="argent4" onclick="showSlider('argent4')">argent4</div>
+            <div class="agent" id="argent5" onclick="showSlider('argent5')">argent5</div>
+            <div class="agent" id="argent6" onclick="showSlider('argent6')">argent6</div>
+        </div>
+
+        <br>
+
+        <div class="field">
+            
+            <div class="left">
+                <div id="slider-container">
+                    donation amount<br>
+                    <input type="range" min="0" max="100" value="0" id="slider" oninput="updateDonationAndCalculate()">
+                    <span id="slidervalue">0</span>
+                </div>
+                <br>
+                <div style="position:relative;width:400px;">
+                    <canvas id="myLineChart"></canvas>
+                </div>
+            </div>
+
+            <br>
+            
+
+            <div class="right info">
+                <form action="#" id="matchingPoolForm">
+                    Matching Pool(budget)<br>
+                    <p><input type="number" name="quantity1" min="0" value="100" id="matchingPool" oninput="calculateMatchedAmounts()"></p>
+                </form>
+                <table id="amountsTable">
+                    <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Donation Amount</th>
+                        <th>Matched Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+
+        <div class="field result">
+
+            <!-- <div style="position:relative;width:400px;">
+                <canvas id="myLineChart"></canvas>
+            </div> -->
+
+
+            <!-- <div class="aaa"> -->
+    
+                <!-- <div id="agentInfo">
+                    <h3>エージェント情報</h3>
+                    <p id="membershipCount"></p>
+                    <p id="friendshipCount"></p>
+                    <p id="currentMatchedAmount"></p>
+                    <p id="currentDonation"></p>
+                    <p id="influenceScore"></p>
+                </div> -->
+            
+                <!-- <table id="amountsTable">
+                    <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Donation Amount</th>
+                        <th>Matched Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table> -->
+            <!-- </div> -->
+        </div>
+      
+        <!-- <p>simulator until here</p> -->
+        
+        <div id="agentInfo">
+            <h3>argent info</h3>
+            <p id="membershipCount"></p>
+            <p id="friendshipCount"></p>
+            <p id="currentMatchedAmount"></p>
+            <p id="currentDonation"></p>
+            <p id="influenceScore"></p>
+        </div>
+
+    </section>
+  <script src="js/script.js"></script>
+</body>
+</html>
